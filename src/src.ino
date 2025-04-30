@@ -9,12 +9,12 @@ int ADXL345 = 0x53;
 
 float startX = 0, startY = 0, startZ = 0;
 float startPitch = 0, startRoll = 0;
-int msBeforeAlarm = 5000;
-float updateTime = 200;
-unsigned long lastRollTime = 0; // Track time when roll exceeds 130 degrees
+float pitchThreshold = -20;
+float rollThreshold = 75;
 
-// #define LED_DANGER_PIN A0  // PORTC.0
-// #define LED_WARNING_PIN A1 // PORTC.1
+int msBeforeAlarm = 5000;
+float updateTime = 1000;
+unsigned long lastRollTime = 0; // Track time when roll exceeds 130 degrees
 
 enum DangerLevel {
   DANGER, // Roll above 130 degrees
@@ -52,13 +52,14 @@ void setup() {
 
   pinMode(A8, OUTPUT); // PC0 / Pin 37
   pinMode(A9, OUTPUT); // PC1 / Pin 36
-  // pinMode(LED_DANGER_PIN, OUTPUT);
-  // pinMode(LED_WARNING_PIN, OUTPUT);
 }
 
+float rollAvg = 0;
 float rollSum = 0;
 int rollCount = 0;
-float rollAvg = 0;
+
+float pitchAvg = 0;
+float pitchSum = 0;
 
 void loop() {
   sensors_event_t event;
@@ -76,8 +77,11 @@ void loop() {
   
   rollSum += roll;
   rollCount++;
+  pitchSum += pitch;
+
   
   if (rollCount >= 10) {
+    // Calc roll average
     rollAvg = rollSum / 10.0;
     Serial.print("Average Roll (last 10): ");
     Serial.print(rollAvg);
@@ -86,6 +90,15 @@ void loop() {
     // Reset for next batch
     rollSum = 0;
     rollCount = 0;
+
+    // Calc pitch average
+    pitchAvg = pitchSum / 10.0;
+    Serial.print("Average Pitch (last 10): ");
+    Serial.print(pitchAvg);
+    Serial.println(" deg");
+
+    // Reset for next batch
+    pitchSum = 0;
   }
 
   // Print results
@@ -98,9 +111,8 @@ void loop() {
   Serial.print(" Z: "); Serial.print(az);
   Serial.println();
 
-  // If roll exceeds 130, start the timer
-  if (rollAvg > 130) {
-    if (lastRollTime == 0) { // First time exceeding 130 degrees
+  if (rollAvg > rollThreshold || pitch < pitchThreshold) {
+    if (lastRollTime == 0) { // First time exceeding threshold
       lastRollTime = millis();
     }
 
