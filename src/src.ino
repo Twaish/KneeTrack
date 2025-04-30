@@ -13,6 +13,9 @@ int msBeforeAlarm = 5000;
 float updateTime = 200;
 unsigned long lastRollTime = 0; // Track time when roll exceeds 130 degrees
 
+// #define LED_DANGER_PIN A0  // PORTC.0
+// #define LED_WARNING_PIN A1 // PORTC.1
+
 enum DangerLevel {
   DANGER, // Roll above 130 degrees
   WARNING, // Roll between halfway (65 degrees) and full way (130 degrees)
@@ -49,6 +52,8 @@ void setup() {
 
   pinMode(A8, OUTPUT); // PC0 / Pin 37
   pinMode(A9, OUTPUT); // PC1 / Pin 36
+  // pinMode(LED_DANGER_PIN, OUTPUT);
+  // pinMode(LED_WARNING_PIN, OUTPUT);
 }
 
 float rollSum = 0;
