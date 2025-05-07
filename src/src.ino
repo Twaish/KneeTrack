@@ -1,6 +1,7 @@
 #include <Wire.h>
 #include <Adafruit_Sensor.h>
 #include <Adafruit_ADXL345_U.h>
+#define BUZZER_PIN 3  // Using Digital Pin 3 (PWM-capable pin on Arduino Nano)
 
 // Create an instance of the ADXL345
 Adafruit_ADXL345_Unified accel = Adafruit_ADXL345_Unified();
@@ -12,7 +13,7 @@ float startPitch = 0, startRoll = 0;
 float pitchThreshold = -20;
 float rollThreshold = 75;
 
-int msBeforeAlarm = 5000;
+int msBeforeAlarm = 10000;
 float updateTime = 1000;
 unsigned long lastRollTime = 0; // Track time when roll exceeds 130 degrees
 
@@ -50,8 +51,10 @@ void setup() {
   startRoll  = atan2(startY, startZ) * 180.0 / PI;
   Serial.println("Baseline set!");
 
-  pinMode(A8, OUTPUT); // PC0 / Pin 37
-  pinMode(A9, OUTPUT); // PC1 / Pin 36
+  pinMode(A0, OUTPUT);
+  pinMode(A1, OUTPUT);
+  pinMode(BUZZER_PIN, OUTPUT);
+ // PC1 / Pin 36
 }
 
 float rollAvg = 0;
@@ -131,20 +134,28 @@ void loop() {
   delay(updateTime);
 }
 
+int warningCount = 0;
+
 void setStatus(DangerLevel level) {
   switch (level) {
     case DANGER:
-      PORTC |= (1 << PC0);  // Turn on PC0
-      PORTC &= ~(1 << PC1); // Turn off PC1
+      tone(BUZZER_PIN, 600, 100);
+      delay(100);
+      tone(BUZZER_PIN, 600, 100);
+      warningCount = 0;
       break;
-      
+
     case WARNING:
-      PORTC |= (1 << PC1);  // Turn on PC1
-      PORTC &= ~(1 << PC0); // Turn off PC0
+      warningCount++;
+      int freq = 100 + warningCount * 30;
+      tone(BUZZER_PIN, freq, 200);
+      PORTC |= (1 << PC1);
+      PORTC &= ~(1 << PC0);
       break;
 
     case SAFE:
-      PORTC &= ~((1 << PC0) | (1 << PC1)); // Turn off both LEDs
+      PORTC &= ~((1 << PC0) | (1 << PC1));
+      warningCount = 0;
       break;
   }
 }
