@@ -10,11 +10,21 @@ int ADXL345 = 0x53;
 
 float startX = 0, startY = 0, startZ = 0;
 float startPitch = 0, startRoll = 0;
-float pitchThreshold = -20;
-float rollThreshold = 75;
+// float pitchThreshold = -20;
+// float rollThreshold = 75;
+
+float thresholdOffset = -0.3;
+
+float pitchThreshold = -9.3 + thresholdOffset;
+float rollThreshold = -3 + thresholdOffset;
+
+
+float xThreshold = 5;
+float yThreshold = -0.9;
+float zThreshold = 3.7;
 
 int msBeforeAlarm = 10000;
-float updateTime = 1000;
+float updateTime = 500;
 unsigned long lastRollTime = 0; // Track time when roll exceeds 130 degrees
 
 enum DangerLevel {
@@ -68,16 +78,24 @@ void loop() {
   sensors_event_t event;
   accel.getEvent(&event);
 
-  float ax = event.acceleration.x - startX;
-  float ay = event.acceleration.y - startY;
-  float az = event.acceleration.z - startZ;
+  // float ax = event.acceleration.x - startX;
+  // float ay = event.acceleration.y - startY;
+  // float az = event.acceleration.z - startZ;
+
+  float ax = event.acceleration.x;
+  float ay = event.acceleration.y;
+  float az = event.acceleration.z;
+
 
   float pitch = atan2(-ax, sqrt(ay * ay + az * az)) * 180.0 / PI;
   float roll  = atan2(ay, az) * 180.0 / PI;
 
-  float relPitch = pitch - startPitch;
-  float relRoll = roll - startRoll;
+  // float relPitch = pitch - startPitch;
+  // float relRoll = roll - startRoll;
+  float relPitch = pitch;
+  float relRoll = roll;
   
+
   rollSum += roll;
   rollCount++;
   pitchSum += pitch;
@@ -114,7 +132,10 @@ void loop() {
   Serial.print(" Z: "); Serial.print(az);
   Serial.println();
 
-  if (rollAvg > rollThreshold || pitch < pitchThreshold) {
+  // bool tingeling = rollAvg > rollThreshold || pitch < pitchThreshold;
+  bool tingeling2 = rollAvg <= rollThreshold || pitch <= pitchThreshold;
+  
+  if (!tingeling2) {
     if (lastRollTime == 0) { // First time exceeding threshold
       lastRollTime = millis();
     }
